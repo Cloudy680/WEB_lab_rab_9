@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>🔗 Словарная цепочка | Чат-игра</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            background: linear-gradient(90deg, #2e1065, #4c1d95);
+            color: white;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #facc15;
+        }
+
+        .title h1 {
+            font-size: 1.8rem;
+        }
+
+        .turn-indicator {
+            background: #facc15;
+            color: #0f172a;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+        }
+
+        .game-container {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .players-panel {
+            width: 280px;
+            background: #fefce8;
+            border-right: 2px solid #e2e8f0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .players-panel h3 {
+            font-size: 1.3rem;
+            color: #4c1d95;
+            margin-bottom: 16px;
+        }
+
+        .player-card {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .player-card.current {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            font-weight: bold;
+        }
+
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        .chain-info {
+            background: #f1f5f9;
+            padding: 16px 24px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #cbd5e1;
+        }
+
+        .info-chip {
+            background: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+        }
+
+        .timer {
+            font-family: monospace;
+            font-size: 1.3rem;
+            color: #dc2626;
+        }
+
+        .messages-area {
+            height: 450px;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #faf9ff;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .message.system {
+            align-self: center;
+            background: #e2e8f0;
+            font-size: 0.85rem;
+        }
+
+        .message.word {
+            background: #d9f99d;
+            font-weight: bold;
+            align-self: flex-start;
+        }
+
+        .message.own {
+            background: #8b5cf6;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .input-area {
+            padding: 18px;
+            background: #f8fafc;
+            border-top: 1px solid #cbd5e1;
+            display: flex;
+            gap: 12px;
+        }
+
+        #wordInput {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 40px;
+            border: 2px solid #cbd5e1;
+            font-size: 1rem;
+        }
+
+        #wordInput:focus {
+            border-color: #8b5cf6;
+            outline: none;
+        }
+
+        #sendBtn {
+            background: linear-gradient(90deg, #7c3aed, #6d28d9);
+            color: white;
+            border: none;
+            padding: 0 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 28px;
+            padding: 40px;
+            max-width: 450px;
+            margin: 100px auto;
+            text-align: center;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 14px;
+            margin: 20px 0;
+            border-radius: 60px;
+            border: 2px solid #cbd5e1;
+        }
+
+        button {
+            background: #4c1d95;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+        }
+
+        #errorMsg {
+            color: #dc2626;
+            text-align: center;
+            padding: 8px;
+            font-weight: bold;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginPanel" class="login-box">
+    <h2>🔗 Словарная цепочка</h2>
+    <p>Придумывай слова на последнюю букву</p>
+    <input type="text" id="nickname" placeholder="Твой никнейм">
+    <button onclick="joinGame()">🎮 В игру</button>
+</div>
+
+<div id="gamePanel" style="display: none;">
+    <div class="game-wrapper">
+        <div class="header">
+            <div class="title">
+                <h1>📖 Словарная цепочка</h1>
+                <p>ходим по очереди, таймер 20 секунд</p>
+            </div>
+            <div class="turn-indicator" id="turnText">Ожидание...</div>
+        </div>
+
+        <div class="game-container">
+            <div class="players-panel">
+                <h3>🏆 Игроки</h3>
+                <div id="playersList"></div>
+            </div>
+
+            <div class="chat-panel">
+                <div class="chain-info">
+                    <div class="info-chip">📦 Последнее слово: <strong id="lastWord">—</strong></div>
+                    <div class="info-chip">🔤 Следующая буква: <strong id="nextLetter">—</strong></div>
+                    <div class="info-chip timer">⏱️ <span id="timer">20</span> сек</div>
+                </div>
+
+                <div id="messages" class="messages-area">
+                    <div class="message system">💬 Игра начнётся, когда будет 2+ игрока</div>
+                </div>
+
+                <div class="input-area">
+                    <input type="text" id="wordInput" placeholder="🔤 введи слово..." disabled>
+                    <button id="sendBtn" disabled>📨 Отправить</button>
+                </div>
+                <div id="errorMsg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    let myName = '';
+
+    function addMessage(text, type = 'system', sender = '') {
+        const msgDiv = document.getElementById('messages');
+        const el = document.createElement('div');
+        el.className = `message ${type}`;
+        if (type === 'system') el.innerHTML = `<div>🔔 ${text}</div>`;
+        else if (type === 'word') el.innerHTML = `<div class="message-header">📖 ${sender}</div><div>${text}</div>`;
+        else if (type === 'own') el.innerHTML = `<div>✨ ${text}</div>`;
+        msgDiv.appendChild(el);
+        el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function joinGame() {
+        const name = document.getElementById('nickname').value.trim();
+        if (!name) return;
+        myName = name;
+        socket.emit('join_game', name);
+    }
+
+    socket.on('joined', () => {
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('gamePanel').style.display = 'block';
+        addMessage(`✅ Добро пожаловать, ${myName}!`, 'system');
+    });
+
+    socket.on('players_list', (players) => {
+        const container = document.getElementById('playersList');
+        container.innerHTML = players.map(p => `
+            <div class="player-card" data-name="${p.name}">
+                <span class="player-name">${p.name}</span>
+                <span class="player-score">${p.score} очков</span>
+            </div>
+        `).join('');
+    });
+
+    socket.on('game_state', (state) => {
+        const isMyTurn = (state.currentPlayer === myName);
+        document.getElementById('wordInput').disabled = !isMyTurn;
+        document.getElementById('sendBtn').disabled = !isMyTurn;
+        document.getElementById('turnText').innerHTML = isMyTurn ? '🔥 ТВОЙ ХОД' : `Ходит: ${state.currentPlayer || '—'}`;
+        document.getElementById('lastWord').innerText = state.lastWord || '—';
+        document.getElementById('nextLetter').innerText = state.lastLetter ? state.lastLetter.toUpperCase() : '—';
+        
+        document.querySelectorAll('.player-card').forEach(card => {
+            if (card.getAttribute('data-name') === state.currentPlayer) card.classList.add('current');
+            else card.classList.remove('current');
+        });
+    });
+
+    socket.on('timer_update', ({ timeLeft, currentPlayer }) => {
+        document.getElementById('timer').innerText = timeLeft;
+        if (timeLeft <= 5) document.getElementById('timer').style.color = '#dc2626';
+        else document.getElementById('timer').style.color = '';
+        
+        // Обновляем индикатор на случай смены хода
+        if (currentPlayer) {
+            const isMyTurn = (currentPlayer === myName);
+            document.getElementById('wordInput').disabled = !isMyTurn;
+            document.getElementById('sendBtn').disabled = !isMyTurn;
+            document.getElementById('turnText').innerHTML = isMyTurn ? '🔥 ТВОЙ ХОД' : `Ходит: ${currentPlayer}`;
+        }
+    });
+
+    socket.on('new_word', (data) => {
+        addMessage(`${data.player}: ${data.word} → следующая буква: ${data.lastLetter?.toUpperCase() || '—'}`, 'word', data.player);
+    });
+
+    socket.on('game_over', ({ winner, lastWord }) => {
+        addMessage(`🏆 ИГРА ЗАВЕРШЕНА! Победитель: ${winner}. Последнее слово: "${lastWord || '—'}"`, 'system');
+        document.getElementById('wordInput').disabled = true;
+        document.getElementById('sendBtn').disabled = true;
+    });
+
+    socket.on('system_message', (msg) => addMessage(msg, 'system'));
+    socket.on('error', (msg) => {
+        const errDiv = document.getElementById('errorMsg');
+        errDiv.innerText = msg;
+        setTimeout(() => errDiv.innerText = '', 2000);
+    });
+
+    function sendWord() {
+        const word = document.getElementById('wordInput').value.trim();
+        if (!word) return;
+        socket.emit('send_word', { word, playerName: myName });
+        document.getElementById('wordInput').value = '';
+    }
+
+    document.getElementById('sendBtn').onclick = sendWord;
+    document.getElementById('wordInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendWord();
+    });
+</script>
+</body>
+</html>
