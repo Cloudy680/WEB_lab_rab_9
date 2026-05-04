@@ -1,0 +1,32 @@
+# Зависимости
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Файлы окружения
+.env
+.env.local
+.env.production
+
+# Логи
+logs/
+*.log
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS метаданные
+Thumbs.db
+Desktop.ini
+
+# Временные файлы
+*.tmp
+*.temp

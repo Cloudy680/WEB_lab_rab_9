@@ -1,14 +1,19 @@
 {
-  "name": "word-chain-game",
+  "name": "zoo-chat-game",
   "version": "1.0.0",
-  "description": "Word chain chat game with Socket.IO",
+  "description": "Zoo management system + Word chain chat game with Socket.IO",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
-    "ejs": "^3.1.9"
+    "ejs": "^3.1.9",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }

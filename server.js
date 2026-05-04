@@ -1,28 +1,23 @@
-const express = require('express');
+#!/usr/bin/env node
+
+const app = require('./rest');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 
-const app = express();
+const PORT = process.env.PORT || 3000;
+
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
+// ========== ЛОГИКА ЧАТ-ИГРЫ "СЛОВАРНАЯ ЦЕПОЧКА" ==========
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-app.get('/', (req, res) => {
-  res.render('chain');
-});
-
-// --- Игровое состояние ---
-let players = [];            // [{ id, name, score, isActive }]
+let players = [];
 let currentPlayerIndex = 0;
 let gameActive = false;
 let lastLetter = null;
 let lastWord = null;
-let lastPlayerName = null;   // кто последний назвал слово (победитель при таймауте)
+let lastPlayerName = null;
 let wordHistory = [];
 let turnTimer = null;
 let countdownInterval = null;
@@ -63,7 +58,6 @@ function startTimer() {
   timeLeft = TURN_TIME;
   broadcastTimer();
   
-  // Секундомер для всех клиентов
   countdownInterval = setInterval(() => {
     if (!gameActive) {
       clearInterval(countdownInterval);
@@ -74,12 +68,10 @@ function startTimer() {
     
     if (timeLeft <= 0) {
       clearInterval(countdownInterval);
-      // Время вышло — игра завершается, побеждает последний назвавший слово
       endGameWithWinner();
     }
   }, 1000);
   
-  // Резервный таймер на случай зависания
   turnTimer = setTimeout(() => {
     if (gameActive && timeLeft > 0) {
       endGameWithWinner();
@@ -122,7 +114,6 @@ function nextTurn() {
     return;
   }
   
-  // Переход к следующему игроку
   currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
   broadcastGameState();
   startTimer();
@@ -137,7 +128,6 @@ function startGame() {
   lastPlayerName = null;
   currentPlayerIndex = 0;
   
-  // Сбрасываем счёт (опционально, можно оставить)
   players.forEach(p => p.score = 0);
   
   io.emit('system_message', '🎮 ИГРА НАЧАЛАСЬ! Первый игрок пишет ЛЮБОЕ слово.');
@@ -145,6 +135,7 @@ function startGame() {
   startTimer();
 }
 
+// Socket.IO обработчики
 io.on('connection', (socket) => {
   console.log('🔌 Игрок подключился:', socket.id);
   
@@ -162,7 +153,6 @@ io.on('connection', (socket) => {
       startGame();
     } else if (gameActive) {
       broadcastGameState();
-      // Если игра уже идёт, новый игрок просто смотрит (не влезает в очередь до следующего раунда)
     }
   });
   
@@ -188,7 +178,6 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Успешный ход
     players[playerIndex].score += 1;
     lastWord = word;
     lastLetter = getLastLetter(word);
@@ -217,7 +206,6 @@ io.on('connection', (socket) => {
         if (currentPlayerIndex >= players.length) currentPlayerIndex = 0;
         broadcastGameState();
         if (players[currentPlayerIndex]?.name === name) {
-          // Если вышел текущий игрок — пропускаем ход
           nextTurn();
         }
       }
@@ -225,6 +213,34 @@ io.on('connection', (socket) => {
   });
 });
 
+// Запуск сервера
 server.listen(PORT, () => {
-  console.log(`✅ Сервер запущен: http://localhost:${PORT}`);
+    console.log('========================================');
+    console.log('ЗООПАРК + ЧАТ-ИГРА "СЛОВАРНАЯ ЦЕПОЧКА"');
+    console.log('========================================');
+    console.log(`Сервер запущен на http://localhost:${PORT}`);
+    console.log('----------------------------------------');
+    console.log('Доступные страницы:');
+    console.log(`  Зоопарк (главная)  -> http://localhost:${PORT}/`);
+    console.log(`  Чат-игра           -> http://localhost:${PORT}/game`);
+    console.log(`  Добавить животное  -> http://localhost:${PORT}/add`);
+    console.log(`  API (список)       -> http://localhost:${PORT}/api/items`);
+    console.log('========================================');
+});
+
+server.on('error', (error) => {
+    if (error.syscall !== 'listen') throw error;
+    
+    switch (error.code) {
+        case 'EACCES':
+            console.error('Порт ' + PORT + ' требует повышенных привилегий');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error('Порт ' + PORT + ' уже используется');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
 });

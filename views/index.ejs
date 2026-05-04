@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Зоопарк</h1>
+            <p>Система управления животными</p>
+        </div>
+        
+        <div class="nav">
+            <a href="/">Главная</a>
+            <a href="/add">Добавить животное</a>
+            <a href="/game" class="btn-game">🎮 Игра "Словарная цепочка"</a>
+        </div>
+        
+        <div class="content">
+            <h2>Список животных</h2>
+            
+            <div class="search-sort-bar">
+                <form method="GET" action="/" class="search-form">
+                    <input type="text" 
+                           name="search" 
+                           placeholder="Поиск по названию..." 
+                           value="<%= search %>"
+                           class="search-input">
+                    <input type="hidden" name="sort" value="<%= sort %>">
+                    <button type="submit" class="btn-search">Найти</button>
+                    <% if (search) { %>
+                        <a href="/" class="btn-clear">Сбросить</a>
+                    <% } %>
+                </form>
+                
+                <div class="sort-block">
+                    <span>Сортировка:</span>
+                    <a href="?search=<%= search %>&sort=asc&page=1" 
+                       class="sort-link <%= sort === 'asc' ? 'active' : '' %>">
+                        А → Я
+                    </a>
+                    <a href="?search=<%= search %>&sort=desc&page=1" 
+                       class="sort-link <%= sort === 'desc' ? 'active' : '' %>">
+                        Я → А
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Информация о результатах поиска -->
+            <div class="results-info">
+                Всего животных: <strong><%= totalItems %></strong>
+                <% if (search) { %>
+                    (поиск: "<%= search %>")
+                <% } %>
+            </div>
+            
+            <% if (animals.length === 0) { %>
+                <div class="empty-state">
+                    <p>Животные не найдены</p>
+                    <% if (search) { %>
+                        <p>Попробуйте изменить поисковый запрос</p>
+                        <a href="/" class="btn-back">Сбросить поиск</a>
+                    <% } else { %>
+                        <p>Добавьте первое животное в зоопарк</p>
+                        <a href="/add" class="btn-back">Добавить животное</a>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <div class="table-wrapper">
+                    <table class="animals-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название животного</th>
+                                <th>Правила ухода</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% animals.forEach(animal => { %>
+                                <tr>
+                                    <td class="id-cell"><%= animal.id %></td>
+                                    <td class="name-cell"><strong><%= animal.name %></strong></td>
+                                    <td class="care-cell"><%= animal.care.substring(0, 100) %><%= animal.care.length > 100 ? '...' : '' %></td>
+                                    <td class="actions-cell">
+                                        <a href="/view/<%= animal.id %>" class="btn-view">Просмотр</a>
+                                        <a href="/edit/<%= animal.id %>" class="btn-edit">Редактировать</a>
+                                        <button onclick="deleteAnimal(<%= animal.id %>, '<%= animal.name %>')" class="btn-delete">Удалить</button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Блок пагинации -->
+                <% if (totalPages > 1) { %>
+                    <div class="pagination">
+                        <% if (hasPrevPage) { %>
+                            <a href="?search=<%= search %>&sort=<%= sort %>&page=<%= prevPage %>" class="pagination-link prev">
+                                &laquo; Предыдущая
+                            </a>
+                        <% } %>
+                        
+                        <% 
+                            let startPage = Math.max(1, currentPage - 2);
+                            let endPage = Math.min(totalPages, currentPage + 2);
+                            
+                            if (startPage > 1) { %>
+                                <a href="?search=<%= search %>&sort=<%= sort %>&page=1" class="pagination-link">1</a>
+                                <% if (startPage > 2) { %>
+                                    <span class="pagination-dots">...</span>
+                                <% } %>
+                            <% } 
+                            
+                            for (let i = startPage; i <= endPage; i++) { 
+                                if (i === currentPage) { %>
+                                    <span class="pagination-link current"><%= i %></span>
+                                <% } else { %>
+                                    <a href="?search=<%= search %>&sort=<%= sort %>&page=<%= i %>" class="pagination-link"><%= i %></a>
+                                <% } 
+                            } 
+                            
+                            if (endPage < totalPages) { 
+                                if (endPage < totalPages - 1) { %>
+                                    <span class="pagination-dots">...</span>
+                                <% } %>
+                                <a href="?search=<%= search %>&sort=<%= sort %>&page=<%= totalPages %>" class="pagination-link"><%= totalPages %></a>
+                            <% } 
+                        %>
+                        
+                        <% if (hasNextPage) { %>
+                            <a href="?search=<%= search %>&sort=<%= sort %>&page=<%= nextPage %>" class="pagination-link next">
+                                Следующая &raquo;
+                            </a>
+                        <% } %>
+                    </div>
+                <% } %>
+            <% } %>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; <%= currentYear %> Зоопарк. Все права защищены</p>
+        </div>
+    </div>
+    
+    <script src="/js/app.js"></script>
+</body>
+</html>

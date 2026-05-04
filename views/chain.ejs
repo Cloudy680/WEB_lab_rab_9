@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>🔗 Словарная цепочка | Чат-игра</title>
+    <link rel="stylesheet" href="/css/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {
@@ -41,12 +42,18 @@
             font-size: 1.8rem;
         }
 
+        .title p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
         .turn-indicator {
             background: #facc15;
             color: #0f172a;
             padding: 8px 20px;
             border-radius: 40px;
             font-weight: bold;
+            font-size: 1.1rem;
         }
 
         .game-container {
@@ -66,6 +73,9 @@
             font-size: 1.3rem;
             color: #4c1d95;
             margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .player-card {
@@ -77,12 +87,31 @@
             justify-content: space-between;
             align-items: center;
             transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .player-card.current {
             background: #fef3c7;
             border-left: 5px solid #f59e0b;
             font-weight: bold;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.2);
+        }
+
+        .player-name {
+            font-size: 1rem;
+        }
+
+        .player-score {
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .player-card.current .player-score {
+            background: #f59e0b;
+            color: white;
         }
 
         .chat-panel {
@@ -106,6 +135,7 @@
             padding: 8px 18px;
             border-radius: 40px;
             font-weight: bold;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .timer {
@@ -135,18 +165,29 @@
             align-self: center;
             background: #e2e8f0;
             font-size: 0.85rem;
+            color: #475569;
+            max-width: 90%;
         }
 
         .message.word {
             background: #d9f99d;
             font-weight: bold;
             align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-header {
+            font-size: 0.75rem;
+            color: #4b5563;
+            margin-bottom: 4px;
+            font-weight: normal;
         }
 
         .message.own {
             background: #8b5cf6;
             color: white;
             align-self: flex-end;
+            border-bottom-right-radius: 4px;
         }
 
         .input-area {
@@ -163,11 +204,18 @@
             border-radius: 40px;
             border: 2px solid #cbd5e1;
             font-size: 1rem;
+            transition: all 0.2s;
         }
 
         #wordInput:focus {
             border-color: #8b5cf6;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+        }
+
+        #wordInput:disabled {
+            background: #f1f5f9;
+            cursor: not-allowed;
         }
 
         #sendBtn {
@@ -178,6 +226,17 @@
             border-radius: 40px;
             font-weight: bold;
             cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        #sendBtn:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        #sendBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .login-box {
@@ -187,23 +246,48 @@
             max-width: 450px;
             margin: 100px auto;
             text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .login-box h2 {
+            color: #2e1065;
+            margin-bottom: 10px;
+        }
+
+        .login-box p {
+            color: #6b7280;
+            margin-bottom: 20px;
         }
 
         .login-box input {
             width: 100%;
-            padding: 14px;
+            padding: 14px 20px;
             margin: 20px 0;
             border-radius: 60px;
             border: 2px solid #cbd5e1;
+            font-size: 1rem;
+            transition: border-color 0.2s;
         }
 
-        button {
-            background: #4c1d95;
+        .login-box input:focus {
+            border-color: #7c3aed;
+            outline: none;
+        }
+
+        .login-box button {
+            background: linear-gradient(90deg, #7c3aed, #6d28d9);
             color: white;
-            padding: 12px 28px;
+            padding: 12px 32px;
             border-radius: 40px;
             border: none;
             cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .login-box button:hover {
+            opacity: 0.9;
         }
 
         #errorMsg {
@@ -211,11 +295,64 @@
             text-align: center;
             padding: 8px;
             font-weight: bold;
+            font-size: 0.85rem;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 24px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .back-link a {
+            color: #7c3aed;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        
+        .back-link a:hover {
+            color: #4c1d95;
+            text-decoration: underline;
+        }
+
+        .empty-players {
+            text-align: center;
+            color: #9ca3af;
+            padding: 20px;
+            font-style: italic;
         }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px);}
             to { opacity: 1; transform: translateY(0);}
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+            
+            .players-panel {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #e2e8f0;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .chain-info {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -224,8 +361,11 @@
 <div id="loginPanel" class="login-box">
     <h2>🔗 Словарная цепочка</h2>
     <p>Придумывай слова на последнюю букву</p>
-    <input type="text" id="nickname" placeholder="Твой никнейм">
+    <input type="text" id="nickname" placeholder="Твой никнейм" maxlength="20" autocomplete="off">
     <button onclick="joinGame()">🎮 В игру</button>
+    <div class="back-link">
+        <a href="/">← Вернуться в зоопарк</a>
+    </div>
 </div>
 
 <div id="gamePanel" style="display: none;">
@@ -241,7 +381,9 @@
         <div class="game-container">
             <div class="players-panel">
                 <h3>🏆 Игроки</h3>
-                <div id="playersList"></div>
+                <div id="playersList">
+                    <div class="empty-players">Ожидание игроков...</div>
+                </div>
             </div>
 
             <div class="chat-panel">
@@ -256,7 +398,7 @@
                 </div>
 
                 <div class="input-area">
-                    <input type="text" id="wordInput" placeholder="🔤 введи слово..." disabled>
+                    <input type="text" id="wordInput" placeholder="🔤 введи слово..." disabled autocomplete="off">
                     <button id="sendBtn" disabled>📨 Отправить</button>
                 </div>
                 <div id="errorMsg"></div>
@@ -273,16 +415,27 @@
         const msgDiv = document.getElementById('messages');
         const el = document.createElement('div');
         el.className = `message ${type}`;
-        if (type === 'system') el.innerHTML = `<div>🔔 ${text}</div>`;
-        else if (type === 'word') el.innerHTML = `<div class="message-header">📖 ${sender}</div><div>${text}</div>`;
-        else if (type === 'own') el.innerHTML = `<div>✨ ${text}</div>`;
+        if (type === 'system') {
+            el.innerHTML = `<div>🔔 ${text}</div>`;
+        } else if (type === 'word') {
+            el.innerHTML = `<div class="message-header">📖 ${sender}</div><div>${text}</div>`;
+        } else if (type === 'own') {
+            el.innerHTML = `<div>✨ ${text}</div>`;
+        }
         msgDiv.appendChild(el);
         el.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
     function joinGame() {
         const name = document.getElementById('nickname').value.trim();
-        if (!name) return;
+        if (!name) {
+            alert('Введите никнейм!');
+            return;
+        }
+        if (name.length > 20) {
+            alert('Никнейм не должен превышать 20 символов');
+            return;
+        }
         myName = name;
         socket.emit('join_game', name);
     }
@@ -295,9 +448,13 @@
 
     socket.on('players_list', (players) => {
         const container = document.getElementById('playersList');
+        if (!players || players.length === 0) {
+            container.innerHTML = '<div class="empty-players">Ожидание игроков...</div>';
+            return;
+        }
         container.innerHTML = players.map(p => `
             <div class="player-card" data-name="${p.name}">
-                <span class="player-name">${p.name}</span>
+                <span class="player-name">${escapeHtml(p.name)}</span>
                 <span class="player-score">${p.score} очков</span>
             </div>
         `).join('');
@@ -305,60 +462,118 @@
 
     socket.on('game_state', (state) => {
         const isMyTurn = (state.currentPlayer === myName);
-        document.getElementById('wordInput').disabled = !isMyTurn;
-        document.getElementById('sendBtn').disabled = !isMyTurn;
-        document.getElementById('turnText').innerHTML = isMyTurn ? '🔥 ТВОЙ ХОД' : `Ходит: ${state.currentPlayer || '—'}`;
-        document.getElementById('lastWord').innerText = state.lastWord || '—';
-        document.getElementById('nextLetter').innerText = state.lastLetter ? state.lastLetter.toUpperCase() : '—';
+        const wordInput = document.getElementById('wordInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        if (wordInput) wordInput.disabled = !isMyTurn;
+        if (sendBtn) sendBtn.disabled = !isMyTurn;
+        
+        const turnText = document.getElementById('turnText');
+        if (turnText) {
+            if (!state.gameActive) {
+                turnText.innerHTML = '⏸️ Ожидание игроков...';
+            } else if (isMyTurn) {
+                turnText.innerHTML = '🔥 ТВОЙ ХОД';
+            } else {
+                turnText.innerHTML = `Ходит: ${state.currentPlayer || '—'}`;
+            }
+        }
+        
+        const lastWordEl = document.getElementById('lastWord');
+        if (lastWordEl) lastWordEl.innerText = state.lastWord || '—';
+        
+        const nextLetterEl = document.getElementById('nextLetter');
+        if (nextLetterEl) nextLetterEl.innerText = state.lastLetter ? state.lastLetter.toUpperCase() : '—';
         
         document.querySelectorAll('.player-card').forEach(card => {
-            if (card.getAttribute('data-name') === state.currentPlayer) card.classList.add('current');
-            else card.classList.remove('current');
+            if (card.getAttribute('data-name') === state.currentPlayer) {
+                card.classList.add('current');
+            } else {
+                card.classList.remove('current');
+            }
         });
     });
 
     socket.on('timer_update', ({ timeLeft, currentPlayer }) => {
-        document.getElementById('timer').innerText = timeLeft;
-        if (timeLeft <= 5) document.getElementById('timer').style.color = '#dc2626';
-        else document.getElementById('timer').style.color = '';
+        const timerEl = document.getElementById('timer');
+        if (timerEl) {
+            timerEl.innerText = timeLeft;
+            if (timeLeft <= 5) {
+                timerEl.style.color = '#dc2626';
+                timerEl.style.fontWeight = 'bold';
+            } else {
+                timerEl.style.color = '';
+                timerEl.style.fontWeight = '';
+            }
+        }
         
-        // Обновляем индикатор на случай смены хода
         if (currentPlayer) {
             const isMyTurn = (currentPlayer === myName);
-            document.getElementById('wordInput').disabled = !isMyTurn;
-            document.getElementById('sendBtn').disabled = !isMyTurn;
-            document.getElementById('turnText').innerHTML = isMyTurn ? '🔥 ТВОЙ ХОД' : `Ходит: ${currentPlayer}`;
+            const wordInput = document.getElementById('wordInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const turnText = document.getElementById('turnText');
+            
+            if (wordInput) wordInput.disabled = !isMyTurn;
+            if (sendBtn) sendBtn.disabled = !isMyTurn;
+            if (turnText) turnText.innerHTML = isMyTurn ? '🔥 ТВОЙ ХОД' : `Ходит: ${currentPlayer}`;
         }
     });
 
     socket.on('new_word', (data) => {
-        addMessage(`${data.player}: ${data.word} → следующая буква: ${data.lastLetter?.toUpperCase() || '—'}`, 'word', data.player);
+        if (data.player === myName) {
+            addMessage(`Вы: ${data.word} → следующая буква: ${data.lastLetter?.toUpperCase() || '—'}`, 'own');
+        } else {
+            addMessage(`${data.player}: ${data.word} → следующая буква: ${data.lastLetter?.toUpperCase() || '—'}`, 'word', data.player);
+        }
     });
 
     socket.on('game_over', ({ winner, lastWord }) => {
         addMessage(`🏆 ИГРА ЗАВЕРШЕНА! Победитель: ${winner}. Последнее слово: "${lastWord || '—'}"`, 'system');
-        document.getElementById('wordInput').disabled = true;
-        document.getElementById('sendBtn').disabled = true;
+        const wordInput = document.getElementById('wordInput');
+        const sendBtn = document.getElementById('sendBtn');
+        if (wordInput) wordInput.disabled = true;
+        if (sendBtn) sendBtn.disabled = true;
     });
 
-    socket.on('system_message', (msg) => addMessage(msg, 'system'));
+    socket.on('system_message', (msg) => {
+        addMessage(msg, 'system');
+    });
+    
     socket.on('error', (msg) => {
         const errDiv = document.getElementById('errorMsg');
-        errDiv.innerText = msg;
-        setTimeout(() => errDiv.innerText = '', 2000);
+        if (errDiv) {
+            errDiv.innerText = msg;
+            setTimeout(() => {
+                if (errDiv) errDiv.innerText = '';
+            }, 3000);
+        }
     });
 
     function sendWord() {
-        const word = document.getElementById('wordInput').value.trim();
+        const wordInput = document.getElementById('wordInput');
+        const word = wordInput.value.trim();
         if (!word) return;
+        
         socket.emit('send_word', { word, playerName: myName });
-        document.getElementById('wordInput').value = '';
+        wordInput.value = '';
     }
 
     document.getElementById('sendBtn').onclick = sendWord;
     document.getElementById('wordInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendWord();
+        if (e.key === 'Enter') {
+            sendWord();
+        }
     });
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
 </script>
 </body>
 </html>
