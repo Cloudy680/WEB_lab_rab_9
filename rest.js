@@ -48,7 +48,6 @@ function processAnimals(animals, query) {
     };
 }
 
-// Главная страница зоопарка
 app.get('/', (req, res) => {
     const allAnimals = store.getAllItems();
     const {
@@ -76,12 +75,10 @@ app.get('/', (req, res) => {
     });
 });
 
-// Страница чат-игры
 app.get('/game', (req, res) => {
     res.render('chain', { title: 'Словарная цепочка - Чат-игра' });
 });
 
-// API маршруты
 app.get('/api/items', (req, res) => {
     const allAnimals = store.getAllItems();
     const {
@@ -145,7 +142,6 @@ app.delete('/api/items/:id', (req, res) => {
     res.json({ success: true, message: 'Животное "' + item.name + '" удалено' });
 });
 
-// Веб-маршруты для CRUD
 app.get('/add', (req, res) => {
     res.render('add', { title: 'Добавить животное' });
 });
@@ -221,7 +217,6 @@ app.post('/delete/:id', (req, res) => {
     res.redirect('/');
 });
 
-// Обработка ошибок 404
 app.use((req, res) => {
     res.status(404).render('error', { 
         title: 'Страница не найдена',
@@ -229,7 +224,6 @@ app.use((req, res) => {
     });
 });
 
-// Обработка ошибок 500
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).render('error', {

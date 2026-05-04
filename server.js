@@ -10,8 +10,6 @@ const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 const io = new Server(server);
 
-// ========== ЛОГИКА ЧАТ-ИГРЫ "СЛОВАРНАЯ ЦЕПОЧКА" ==========
-
 let players = [];
 let currentPlayerIndex = 0;
 let gameActive = false;
@@ -135,7 +133,6 @@ function startGame() {
   startTimer();
 }
 
-// Socket.IO обработчики
 io.on('connection', (socket) => {
   console.log('🔌 Игрок подключился:', socket.id);
   
@@ -213,7 +210,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Запуск сервера
 server.listen(PORT, () => {
     console.log('========================================');
     console.log('ЗООПАРК + ЧАТ-ИГРА "СЛОВАРНАЯ ЦЕПОЧКА"');
